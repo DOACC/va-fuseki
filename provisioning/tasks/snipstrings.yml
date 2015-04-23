@@ -1,0 +1,7 @@
+- name: uninstall chefnpuppet
+  with_items:
+    - puppet
+    - puppet-common
+    - chef
+  action: apt pkg=$item state=absent
+

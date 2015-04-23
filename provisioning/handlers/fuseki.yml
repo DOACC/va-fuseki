@@ -1,0 +1,10 @@
+---
+    # Fuseki handlers
+      - name: fuseki-start
+        service: name=fuseki start=started
+
+      - name: fuseki-restart
+        service: name=fuseki state=restarted
+
+      - name: fuseki-reload
+        service: name=fuseki state=reloaded

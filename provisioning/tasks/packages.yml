@@ -1,0 +1,75 @@
+- name: Create swap space
+  command: dd if=/dev/zero of=/extraswap bs=1M count=512
+  when: ansible_swaptotal_mb < 1
+
+- name: Make swap
+  command: mkswap /extraswap
+  when: ansible_swaptotal_mb < 1
+
+- name: Add to fstab
+  action: lineinfile dest=/etc/fstab regexp="extraswap" line="/extraswap none swap sw 0 0" state=present
+
+- name: Turn swap on
+  command: swapon -a
+
+- name: Set swapiness
+  shell: echo 0 | sudo tee /proc/sys/vm/swappiness
+
+- name: install software-properties-common
+  action: apt pkg='software-properties-common' state=present
+
+- name: update apt repo
+  action: apt update_cache=yes
+
+- name: Upgrade full
+  apt: upgrade=full
+- name: install system packages
+  action: apt pkg={{item}} state=installed update-cache=yes
+  with_items:
+    - unzip
+    - openjdk-7-jre # for Jena
+    - bzip2
+    - git
+    - supervisor
+
+- name: download jena
+  get_url: url={{ jena_url }} dest=/opt/jena.tar.gz
+
+- name: download fuseki
+  get_url: url={{ fuseki_url }} dest=/opt/fuseki.tar.gz
+
+- name: create jena directory
+  file: path=/opt/jena state=directory
+
+- name: create fuseki directory
+  file: path=/opt/fuseki state=directory
+
+- name: extract jena
+  command: tar -xzvf jena.tar.gz -C /opt/jena --strip 1 chdir=/opt/
+
+- name: extract fuseki
+  command: tar -xzvf fuseki.tar.gz -C /opt/fuseki --strip 1 chdir=/opt/
+
+- name: copy fuseki init.d script
+  template: src=fuseki_init.sh dest=/etc/init.d/fuseki mode=755
+
+- name: Copy Fuseki DOACC config
+  action: copy src=files/doacc.ttl dest=/opt/fuseki/
+
+- name: Clone DOACC ontology
+  git: accept_hostkey=yes repo=https://github.com/DOACC/doacc.git dest=/tmp/doacc
+
+- name: Position DOACC ontology
+  command: /bin/cp /tmp/doacc/doacc.owl /opt/fuseki/Data/doacc_tbox.rdf
+
+- name: Clone CC ontology
+  git: accept_hostkey=yes repo=https://github.com/DOACC/ccy.git dest=/tmp/ccy
+
+- name: Position CC ontology
+  command: /bin/cp /tmp/ccy/ccy.owl /opt/fuseki/Data/ccy_tbox.rdf
+
+- name: Clone individuals
+  git: accept_hostkey=yes repo=https://github.com/DOACC/individuals.git dest=/tmp/altcoins
+
+- name: Position indivduals
+  command: /bin/cp /tmp/altcoins/cryptocurrency.nt /opt/fuseki/Data/doacc_abox.nt

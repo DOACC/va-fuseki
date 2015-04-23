@@ -1,0 +1,21 @@
+---
+
+- name: DOACC Fuseki SPARQL endpoint build
+  hosts: 192.168.0.129
+  gather_facts: true
+  sudo: true
+  vars:
+   - vpath: /opt/fuseki
+   - workers: use at template ansible_processor_count
+   - connections : "1024"
+   - jena_url: "http://www.eu.apache.org/dist/jena/binaries/apache-jena-2.13.0.tar.gz"
+   - fuseki_url: "http://www.eu.apache.org/dist/jena/binaries/apache-jena-fuseki-2.0.0.tar.gz"
+
+  tasks:
+    - include: tasks/snipstrings.yml
+    - include: tasks/packages.yml
+    - include: services/supervisord.yml
+
+  handlers:
+    - include: handlers/supervisord.yml
+    - include: handlers/fuseki.yml

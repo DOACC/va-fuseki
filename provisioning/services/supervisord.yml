@@ -1,0 +1,20 @@
+- name: create supervisord config
+  action: template src=templates/supervisord.conf dest=/etc/supervisord.conf
+
+- name: create supervisord config folder
+  action: file dest=/etc/supervisor state=directory owner=root
+
+- name: create supervisord init script
+  action: template src=templates/supervisord.sh dest=/etc/init.d/supervisord mode=0755
+
+- name: start supervisord service and have it run during system startup
+  action: service name=supervisord state=started enabled=yes
+
+- name: create supervisor config file for Fuseki
+  action: template src=templates/supervisor_default.conf dest=/etc/supervisor/conf.d/fuseki.conf
+
+- name: add app to supervisor
+  action: supervisorctl name=fuseki state=present
+
+- name: Get supervisor to start app
+  action: supervisorctl name=fuseki state=restarted
